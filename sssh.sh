@@ -4,8 +4,11 @@
 # 
 #       Super SSH Script 
 #
-#       Version  8 [06.2016]
+#       Version  9.1 [11.2017]
 #
+#	V9.2	Rewrite project menu output, change from echo to printf
+#	V9.1	Project overview now accept project names as input [08.11.2017]
+#	V9.     [06.10.2017]
 #       V8.     Added group function again [08.2017]
 #       V7.     Rewrite script - now with functions [06.2016]
 #       V6.     Added function to pass parameters to server menu [05.2012]
@@ -16,16 +19,17 @@
 #       V1.     Create script
 
 
-
 #### config  ####
 ## Wenn true wird jeder Host 1x angepingt und der Status ausgegeben
 PINGHOST="true" # gueltige Werte [true,false]
 
 
-
 #### do not change ####
 ## used to kill from subshell
 MAINPID=$$
+
+## locationOfScript
+locationOfScript=$(dirname "$(readlink -e "$0")")
 
 
 #===  FUNCTION  ================================================================
@@ -35,7 +39,7 @@ MAINPID=$$
 #       RETURNS:  
 #===============================================================================
 function get_projects() {
-        for project in $(cat projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++'); do
+        for project in $(cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++'); do
                 projects=$projects:$(echo $project)
                 project_count=$[project_count+1]
         done
@@ -56,7 +60,7 @@ function get_groups() {
         groups_count=0
 
         ## be carfully: $GROUPS is an BASH internal variable
-        for group in  $(cat projects.txt | grep -ve "^#" -e "^$" | grep "$1" | cut -d ":" -f "5" | awk '!a[$0]++'); do
+        for group in  $(cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | grep "$1" | cut -d ":" -f "5" | awk '!a[$0]++'); do
                 groups=$groups:$(echo $group)
                 groups_count=$[groups_count+1]
         done
@@ -117,13 +121,13 @@ function print_projectmenu() {
 
         # Ausgabe des Headers
         if [ "$PINGHOST" == "true" ]; then
-                echo -e "\n\n\033[1;33mID USER\t Host\t\t[Status]\tGruppe\t\tBeschreibung \033[0m "
+				printf "\n\033[1;33m%3s %-11s %-20s %-12s %-13s %s\033[0m\n" "ID" "USER" "Host" "[Status]" "Gruppe" "Beschreibung"
         else
                 echo -e "\033[1;33mID USER\t Host\tGruppe\t\t\tBeschreibung \033[0m "
         fi
 
 
-        cat projects.txt | grep -ve "^#" -e "^$" | grep -E "^$project.*$GROUP_FILTER"  | while read host ; do 
+        cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | grep -E "^$project.*$GROUP_FILTER"  | while read host ; do 
 
                 LINENUMBER=$[LINENUMBER+1]
 
@@ -134,11 +138,11 @@ function print_projectmenu() {
                 SSHPORT=`echo $host |cut -f 6 -d ':' `
 
                 ## check some variables
-                [[ -z $USERNAME ]]              && USERNAME=" \t " || USERNAME=" "$USERNAME" @"
+                [[ -z $USERNAME ]]              && USERNAME="" || USERNAME="$USERNAME @"
                 [[ -z $SSHPORT ]]               && SSHPORT="22"
-                [[ "$PINGHOST" == "true" ]]     && ping_host $SSHHOST $SSHPORT || STATUS="\t"
+				[[ "$PINGHOST" == "true" ]]     && ping_host $SSHHOST $SSHPORT || STATUS="\t"
 
-                echo -e "$LINENUMBER$USERNAME $SSHHOST\t$STATUS\t$GROUP\t\t$DESCRIBTION"
+				printf "%2s %12s %-20s $STATUSCOLOR%-12s\033[0m %-13s %s\n" "$LINENUMBER" "$USERNAME" "$SSHHOST" "$STATUS" "$GROUP" "$DESCRIBTION"
         done
 
         # Ausgabe der Standarteintraege
@@ -157,9 +161,13 @@ function ping_host() {
         ## returncode doesn't work in subshell ...
         PING=$(netcat -w 1 -z $1 $2 >> /dev/null 2>&1 ; echo $? )
 
-        [ "$PING" -eq 0 ] \
-        && STATUS="[\033[1;32mONLINE\033[0m]" \
-        || STATUS="[\033[1;31mOFFLINE\033[0m]"
+        if [ "$PING" -eq 0 ]; then
+        	STATUS="[ONLINE]"  
+			STATUSCOLOR="\033[1;32m"
+		else
+			STATUS="[OFFLINE]" 
+			STATUSCOLOR="\033[1;31m"
+		fi
 }
 
 
@@ -187,10 +195,13 @@ function check_input() {
                         return 0
                 else
                         ## happen when projectname is directly given
-                        [[ `grep "$project:$1" projects.txt` ]] && return 0 || return 1
+                        [[ `grep "$project:$1" $locationOfScript/projects.txt` ]] && return 0 || return 1
                 fi
         elif [ `echo "$1" | grep -E ^[[:digit:]]+$` ] && [ "$1" -le "$project_count"  ]; then
                 return 0
+		## check for project-names
+		elif [ `cat $locationOfScript/projects.txt | cut -d ":" -f1 | egrep -v "^$|#" | sort -u | grep $1` ]; then
+				return 0
         else 
                 return 1
         fi
@@ -209,10 +220,10 @@ function ssh_to_host() {
         ## check if number or hostname given
         if [ `echo $1 | grep -E ^[[:digit:]]+$` ]; then
                 ## linenumber
-                HOSTSTRING=$(grep "^$project" projects.txt | head -n $1 | tail -n 1 )
+                HOSTSTRING=$(grep "^$project" $locationOfScript/projects.txt | head -n $1 | tail -n 1 )
         else
                 ## hostnme
-                HOSTSTRING==$(grep "^$project:$1" projects.txt  )
+                HOSTSTRING==$(grep "^$project:$1" $locationOfScript/projects.txt  )
         fi
 
         SSHHOST=`echo $HOSTSTRING |cut -f 2 -d ':' `
@@ -236,7 +247,7 @@ while ! check_input $INPUT ; do
         clear
         echo " == Super SSH Sprungmenu =="
         echo
-        cat projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++' | cat -n
+        cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++' | cat -n
         echo
         echo "     x  Abbruch"
         echo
@@ -267,4 +278,3 @@ while ! check_input $INPUT2 INPUT2 ; do
 done
 
 ssh_to_host $INPUT2
-
