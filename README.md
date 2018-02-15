@@ -23,6 +23,7 @@ The sssh-script organize your Linux-hosts (ssh!).
 
 ## Known Bugs
 - [ ] parameters not working property
+- [ ] host list number not correct when filter with groups
 
 ## Edit .bashrc
 ```bash
