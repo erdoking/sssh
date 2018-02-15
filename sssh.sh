@@ -92,7 +92,7 @@ function print_projectmenu() {
         GROUP_FILTER=
 
         ## check if given projectname or projectnumber
-        if [[ "$1" == ?(-)+([0-9]) ]]; then
+        if [[ $1 =~ ^[0-9]+$ ]] ; then
           ## projectnumber, read projectname from "projects" string
           project=$( echo $projects | cut -d ":" -f "$1" )
         else
