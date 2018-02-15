@@ -92,7 +92,7 @@ function print_projectmenu() {
         GROUP_FILTER=
 
         ## check if given projectname or projectnumber
-        if [[ "$1" == "?(-)+([0-9])" ]]; then
+        if [[ "$1" == ?(-)+([0-9]) ]]; then
           ## projectnumber, read projectname from "projects" string
           project=$( echo $projects | cut -d ":" -f "$1" )
         else
@@ -105,13 +105,10 @@ function print_projectmenu() {
 
                 for i in "${!arr_character[@]}"; do
                         if [ "${arr_character[$i]}" == "$2" ]; then
-                                echo iii=$i
                                 GROUP_FILTER=$( echo $groups | cut -d ":" -f $(($i+1)) )
                         fi
                 done
         fi
-
-        echo GROUP_FILTER=$GROUP_FILTER
 
         clear
         echo -e " == SSH Sprungmenu ==\n\n Projekt: $project\n"
@@ -179,6 +176,9 @@ function ping_host() {
 #===============================================================================
 function check_input() {
 
+	## no project choose
+        [ "$INPUT" == "" ] && return 1
+
         ## User cancel
         [ "$1" == "x" ] && ( echo "Du weißt auch nicht was du willst ..." ; kill $MAINPID )
 
@@ -187,10 +187,6 @@ function check_input() {
                 ## back to mainmenu
                 if [ "$1" == "z" ]; then 
                         bash $0
-        #       ## project was choosen ...
-        #       elif [ ! `echo "$1" | grep -E ^[[:lower:]]$` ]; then
-        #               ## normally 0 but we need the project loop once again
-        #               return 1 
                 elif [ `echo $1 | grep -E ^[[:digit:]]+$` ]; then
                         return 0
                 else
@@ -200,8 +196,8 @@ function check_input() {
         elif [ `echo "$1" | grep -E ^[[:digit:]]+$` ] && [ "$1" -le "$project_count"  ]; then
                 return 0
 		## check for project-names
-		elif [ `cat $locationOfScript/projects.txt | cut -d ":" -f1 | egrep -v "^$|#" | sort -u | grep $1` ]; then
-				return 0
+	elif [ `cat $locationOfScript/projects.txt | cut -d ":" -f1 | egrep -v "^$|#" | sort -u | grep "$1"` ]; then
+		return 0
         else 
                 return 1
         fi
