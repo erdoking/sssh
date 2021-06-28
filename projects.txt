@@ -1,9 +1,0 @@
-## project:hostaddress:description:username (optional):group (optional):port (optional)
-
-## Group: TEST 
-TEST:1.1.1.1:SLES12 x64:root:::
-TEST:127.0.0.1:SLES12 x64:root:::
-
-## Group: vagrant
-vagrant:192.168.33.10:SLES12 x64:root:::
-vagrant:192.168.33.11:SLES12 x64:root:::

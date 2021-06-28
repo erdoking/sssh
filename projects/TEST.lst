@@ -1,0 +1,18 @@
+HOST repository.my.domain
+    DESC Debian Repository
+    GROUP Debian_10
+
+HOST mySQL.my.domain
+    DESC DB - mySQL
+    GROUP Debian_9
+
+HOST ldap
+    DESC LDAP Server
+    GROUP Debian_9
+    USER pi
+    PORT 1022
+
+HOST webserver.myother.domain
+    DESC Apache Server
+    GROUP CentOS_8
+

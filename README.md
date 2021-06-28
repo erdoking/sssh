@@ -48,18 +48,21 @@ Auswahl:
 ```bash
  == SSH Sprungmenu ==
 
- Projekt: TEST
+ Projekt: myproject1
 
+[a]Debian_10 [b]Debian_9 [c]CentOS_8
 
-
-ID USER	 Host		[Status]	Gruppe		Beschreibung  
-1 root @ 1.1.1.1	[OFFLINE]			SLES12 x64
-2 root @ 127.0.0.1	[ONLINE]			SLES12 x64
+ ID    <USER> @ Host:<port>               [Status]   Gruppe        Beschreibung
+ 1              repository                [DOWN]     Debian_10     Debian Repository
+ 2              mySQL                     [UP]       Debian_9      DB - mySQL
+ 3         pi @ ldap:1022                 [UP]       Debian_9      LDAP Server
+ 4              webserver                 [DOWN]     CentOS_8      Apache Server
 
 
      x  Abbruch
      z  Zurueck ins Basemenu
  ============================
 Auswahl: 
+
 ```
 
