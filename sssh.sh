@@ -187,7 +187,7 @@ function print_mainmenu() {
     declare -g INPUT_PROJECT
 
     while ! check_input "${INPUT_PROJECT}"; do
-             clear
+             if ! ${DEBUG}; then clear; fi
              echo " == Super SSH Sprungmenu =="
              echo
              for i in "${!array_projects[@]}"; do
@@ -217,7 +217,7 @@ function print_projectmenu() {
          GROUP_FILTER=
          LINENUMBER=
 
-         clear
+         if ! ${DEBUG}; then clear; fi
          echo -e " == SSH Sprungmenu ==\n\n Projekt: $project\n"
 
          ## just read out all groups
