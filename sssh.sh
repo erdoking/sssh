@@ -78,6 +78,8 @@ function get_projects() {
          do
              if [ "${VARNAME}" == "HOST" ]
              then
+                  unset VAR_HOSTNAME
+
                   HOSTNAME=`echo ${VALUE} | sed 's/-/_/g'`
 
                   [[ ${HOSTNAME} =~ '.' ]] && { VAR_HOSTNAME=${HOSTNAME}; HOSTNAME=`echo ${HOSTNAME} | cut -d'.' -f1` ; }
