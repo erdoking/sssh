@@ -1,28 +1,44 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ##########################################################
 # 
-#       Super SSH Script 
+#        Super SSH Script 
 #
-#       Version  9.1 [11.2017]
+#        Version  2 [06/2021]
 #
-#	V9.2	Rewrite project menu output, change from echo to printf
-#	V9.1	Project overview now accept project names as input [08.11.2017]
-#	V9.     [06.10.2017]
-#       V8.     Added group function again [08.2017]
-#       V7.     Rewrite script - now with functions [06.2016]
-#       V6.     Added function to pass parameters to server menu [05.2012]
-#       V5.     Added function to choose by hostname [05.2012]
-#       V4.     Added group function [11.2011]
-#       V3.     Added avaibility function
-#       V2.     color output
-#       V1.     Create script
+#        v2    start new version, complete rewrite of code
+#        ---
+#        V1.9.2   Rewrite project menu output, change from echo to printf
+#        V1.9.1   Project overview now accept project names as input [08.11.2017]
+#        V1.9     [06.10.2017]
+#        V1.8     Added group function again [08.2017]
+#        V1.7     Rewrite script - now with functions [06.2016]
+#        V1.6     Added function to pass parameters to server menu [05.2012]
+#        V1.5     Added function to choose by hostname [05.2012]
+#        V1.4     Added group function [11.2011]
+#        V1.3     Added avaibility function
+#        V1.2     color output
+#        V1.0     Create script
+
+
+## some infos 
+##
+## There are 3 types of arrays:
+##
+## - array_projects, contain the projectnames
+## - array_${project_name}, dynamic generates from file name
+## - array_${host_name}, dynamic generates from project-configuration
+##
 
 
 #### config  ####
 ## Wenn true wird jeder Host 1x angepingt und der Status ausgegeben
 PINGHOST="true" # gueltige Werte [true,false]
+DEBUG="false"
 
+## print full fqdn in project menu [default: false]
+## fqdn is always used to connect even is deactivated!!
+FQDN="false"
 
 #### do not change ####
 ## used to kill from subshell
@@ -31,246 +47,432 @@ MAINPID=$$
 ## locationOfScript
 locationOfScript=$(dirname "$(readlink -e "$0")")
 
+## declare project-array
+declare -a array_projects
+
 
 #===  FUNCTION  ================================================================
-#          NAME:  get_projects
-#   DESCRIPTION:  find all projects
-#    PARAMETERS:  
-#       RETURNS:  
+#    NAME:  get_projects
+#   DESCRIPTION:  read project-files (*.lst) to arrays
+#   PARAMETERS:  
+#    RETURNS:  
 #===============================================================================
 function get_projects() {
-        for project in $(cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++'); do
-                projects=$projects:$(echo $project)
-                project_count=$[project_count+1]
-        done
-        ## remove first :
-        projects=$(echo $projects | /bin/sed 's/://')
+
+    ## empty array
+    array_projects=()
+
+    array_projects+=('defaults')
+
+    while read file
+    do
+        projectname=`basename "${file}" .lst`
+
+         ## write projectname to project array
+         array_projects+=("${projectname}")
+         declare -ga ${projectname}
+         eval "${projectname}+=('defaults')"        
+
+         ## parse project file
+         while read VARNAME VALUE
+         do
+             if [ "${VARNAME}" == "HOST" ]
+             then
+                  HOSTNAME=`echo ${VALUE} | sed 's/-/_/g'`
+
+                  [[ ${HOSTNAME} =~ '.' ]] && { VAR_HOSTNAME=${HOSTNAME}; HOSTNAME=`echo ${HOSTNAME} | cut -d'.' -f1` ; }
+
+                  declare -Ag "${HOSTNAME}"
+
+                  [[ ${VAR_HOSTNAME} ]] && { eval "${HOSTNAME}+=(['fqdn']=\"${VAR_HOSTNAME}\")"; }
+
+
+                  eval "${projectname}+=(\"${HOSTNAME}\")"
+                  continue
+             else
+                  ## add configuration to host-array
+                  ## varnames getting lower case (https://stackoverflow.com/questions/2264428/how-to-convert-a-string-to-lower-case-in-bash/2265268#2265268)
+                  ## eval "nas+=([port]="22")"
+                  eval "${HOSTNAME}+=([\"${VARNAME,,}\"]=\"${VALUE}\")"
+             fi
+                                 
+
+         done <<<$( egrep -v "(^\s*$|^#)" "${file}" )
+
+    done <<<$( find ${locationOfScript} -iname *.lst | sort )
+
 }
 
 #===  FUNCTION  ================================================================
-#          NAME:  get_groups
+#           NAME:  get_groups
 #   DESCRIPTION:  find all groups of given project
 #    PARAMETERS:  project_name
-#       RETURNS:  
+#        RETURNS:  
 #===============================================================================
 function get_groups() {
 
-        ## reset groups/groupscount (neccessary for project reload)
-        groups=""
-        groups_count=0
+         ## reset groups/groupscount (neccessary for project reload)
+         groups=""
+         groups_count=0
+         counter=0
 
-        ## be carfully: $GROUPS is an BASH internal variable
-        for group in  $(cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | grep "$1" | cut -d ":" -f "5" | awk '!a[$0]++'); do
-                groups=$groups:$(echo $group)
-                groups_count=$[groups_count+1]
-        done
-        ## remove first :
-        groups=$(echo $groups | /bin/sed 's/://')
+         ## be carfully: $GROUPS is an BASH internal variable
+         declare -n array_project="$project"
+         declare -Ag array_groups
 
-        # x y z sind mit sonderfunktionen belegt!
-        arr_character=( a b c d e f g h i j k l m n o p q r s t u v w )
+         # x y z sind mit sonderfunktionen belegt!
+         arr_character=( a b c d e f g h i j k l m n o p q r s t u v w )
 
-        for (( i=0;i<$groups_count;i++)); do
-                # zur späteren Kontrolle schreiben wir alle BENUTZTEN Buchstaben in ein Array
-                arr_character["$i"]="${arr_character[${i}]}"
+         for host in "${array_project[@]}"; do
 
-                # Ausgabe der Gruppen in einer Zeile
-                echo -en "[\033[1;33m"${arr_character[${i}]}"\033[0m]\033[1;32m"$( echo $groups | cut -d ":" -f "$(($i+1))" )"\033[0m " 
-        done
+                  [ "${host}" == "defaults" ] && continue
+                  declare -n vars="$host"
+
+                  if [ -n "${vars['group']}" ];
+                  then
+                      if [[ ! " ${array_groups[@]} " =~ " ${vars['group']} " ]]
+                      then
+                           eval array_groups+=([\"${arr_character[${groups_count}]}\"]=\"${vars['group']}\")
+
+                           groups_count=$[groups_count+1]
+                      fi
+                  fi
+         done
+
+         ## print groups
+         for i in "${!array_groups[@]}"; do
+                printf   "[\033[1;33m%s\033[0m]\033[1;32m%s\033[0m " "${i}" "${array_groups[$i]}" 
+         done
+
 }
 
 
 #===  FUNCTION  ================================================================
-#          NAME:  print_projectmenu
+#           NAME:  get_projectname
+#   DESCRIPTION:  detect the project name
+#    PARAMETERS:  project nr or name
+#        RETURNS:  
+#===============================================================================
+function get_projectname() {
+
+         declare -g project
+
+         ## check if given projectname or projectnumber
+         if [[ $1 =~ ^[0-9]+$ ]] ; then
+           ## projectnumber, read projectname from "projects" string
+           project="${array_projects["$1"]}"
+         else
+           ## projectname ...
+           project=$1
+         fi
+
+}
+
+
+
+#===  FUNCTION  ================================================================
+#           NAME:  print_mainmenu
+#   DESCRIPTION:  print out main menu of all projects
+#    PARAMETERS:  
+#        RETURNS:  
+#===============================================================================
+function print_mainmenu() {
+
+    declare -g INPUT_PROJECT
+
+    while ! check_input "${INPUT_PROJECT}"; do
+    #         clear
+             echo " == Super SSH Sprungmenu =="
+             echo
+             for i in "${!array_projects[@]}"; do
+                 [ $i -ne 0 ] && printf "%6s  %s\n" "$i" "${array_projects[$i]}"
+             done
+             echo
+             echo "     x  Abbruch"
+             echo
+             echo " ===================="
+             echo -ne "Auswahl: "
+             read INPUT_PROJECT
+
+    done
+}
+
+
+
+#===  FUNCTION  ================================================================
+#           NAME:  print_projectmenu
 #   DESCRIPTION:  print out projectmenu for given project
 #    PARAMETERS:  project,group
-#       RETURNS:  
+#        RETURNS:  
 #===============================================================================
 function print_projectmenu() {
 
-        ## reset variables
-        GROUP_FILTER=
+         ## reset variables
+         GROUP_FILTER=
+         LINENUMBER=
 
-        ## check if given projectname or projectnumber
-        if [[ $1 =~ ^[0-9]+$ ]] ; then
-          ## projectnumber, read projectname from "projects" string
-          project=$( echo $projects | cut -d ":" -f "$1" )
-        else
-          ## projectname ...
-          project=$1
-        fi
+#         clear
+         echo -e " == SSH Sprungmenu ==\n\n Projekt: $project\n"
 
-        ## group filter given
-        if [ -n "$2" ]; then
+         ## just read out all groups
+         get_groups ${project}
 
-                for i in "${!arr_character[@]}"; do
-                        if [ "${arr_character[$i]}" == "$2" ]; then
-                                GROUP_FILTER=$( echo $groups | cut -d ":" -f $(($i+1)) )
-                        fi
-                done
-        fi
+         ## group filter given
+         if [ -n "$2" ]; then
 
-        clear
-        echo -e " == SSH Sprungmenu ==\n\n Projekt: $project\n"
-
-        ## just read out all groups
-        get_groups $project
-
-        # Ausgabe des Headers
-        if [ "$PINGHOST" == "true" ]; then
-				printf "\n\033[1;33m%3s %-11s %-20s %-12s %-13s %s\033[0m\n" "ID" "USER" "Host" "[Status]" "Gruppe" "Beschreibung"
-        else
-                echo -e "\033[1;33mID USER\t Host\tGruppe\t\t\tBeschreibung \033[0m "
-        fi
+                  for i in "${!arr_character[@]}"; do
+                           if [ "${arr_character[$i]}" == "$2" ]; then
+                                    #GROUP_FILTER=$( echo $groups | cut -d ":" -f $(($i+1)) )
+                                    GROUP_FILTER=${array_groups["$2"]}
+                           fi
+                  done
+         fi
 
 
-        cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | grep -E "^$project.*$GROUP_FILTER"  | while read host ; do 
 
-                LINENUMBER=$[LINENUMBER+1]
+         # Ausgabe des Headers
+         if [ "$PINGHOST" == "true" ]; then
+                printf "\n\n\033[1;33m%3s %11s %-25s %-12s %-13s %s\033[0m\n" "ID" "<USER> @" "Host:<port>" "[Status]" "Gruppe" "Beschreibung"
+         else
+                  echo -e "\033[1;33mID USER\t Host\tGruppe\t\t\tBeschreibung \033[0m "
+         fi
 
-                SSHHOST=`echo $host |cut -f 2 -d ':' `
-                DESCRIBTION=`echo $host |cut -f 3 -d ':' `
-                USERNAME=`echo $host |cut -f 4 -d ':' `
-                GROUP=`echo $host |cut -f 5 -d ':' `
-                SSHPORT=`echo $host |cut -f 6 -d ':' `
+         declare -n array_project="$project"
 
-                ## check some variables
-                [[ -z $USERNAME ]]              && USERNAME="" || USERNAME="$USERNAME @"
-                [[ -z $SSHPORT ]]               && SSHPORT="22"
-				[[ "$PINGHOST" == "true" ]]     && ping_host $SSHHOST $SSHPORT || STATUS="\t"
+         for host in "${array_project[@]}"; do
 
-				printf "%2s %12s %-20s $STATUSCOLOR%-12s\033[0m %-13s %s\n" "$LINENUMBER" "$USERNAME" "$SSHHOST" "$STATUS" "$GROUP" "$DESCRIBTION"
-        done
+#                  GROUP=""
 
-        # Ausgabe der Standarteintraege
-        echo -en "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
+
+                  [ "${host}" == "defaults" ] && continue
+
+                  declare -n vars="$host"
+
+                  LINENUMBER=$[LINENUMBER+1]
+
+                  SSHHOST=${host}
+                  DESCRIBTION="${vars['desc']}"
+                  USERNAME="${vars['user']}"
+                  GROUP="${vars['group']}"
+                  SSHPORT="${vars['port']}"
+                  ALIAS="${vars['alias']}"
+
+                  if ( [ -n "${GROUP_FILTER}" ] && [ "${GROUP}" != "${GROUP_FILTER}" ]); then continue; fi
+
+                  [[ -z ${GROUP} ]]                 && SSHPORT="22"
+
+                  ## print full fqdn if defined and not deactivated by conf
+                  if ( ${FQDN} && [ ${vars['fqdn']} ] ); then SSHHOST=${vars['fqdn']}; fi
+                  ## FQDN allways used to ping host
+                  if ( [ ${vars['fqdn']} ] ); then SSHPINGHOST="${vars['fqdn']}"; fi
+
+
+                  ## check some variables
+                  [[ -z ${USERNAME} ]]                && USERNAME="" || USERNAME="$USERNAME @"
+                  [[ -z ${SSHPORT} ]]                 && SSHPORT="22"
+
+                [[ "${PINGHOST}" == "true" ]]     && ping_host ${SSHPINGHOST} ${SSHPORT} || STATUS="\t"
+
+                  [[ ! -z ${ALIAS} ]]                 && SSHHOST="${ALIAS}"
+                  [[ "${SSHPORT}" != "22" ]]         && SSHPORT_PRINT=":${SSHPORT}"
+
+                printf "%2s %12s %-25s ${STATUSCOLOR}%-12s\033[0m %-13s %s\n" "${LINENUMBER}" "${USERNAME}" "${SSHHOST}${SSHPORT_PRINT}" "${STATUS}" "${GROUP}" "${DESCRIBTION}"
+         done
+
+         # Ausgabe der Standarteintraege
+         echo -en "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
 }
 
 
 #===  FUNCTION  ================================================================
-#          NAME:  ping_host
+#           NAME:  ping_host
 #   DESCRIPTION:  check if given ssh port is open
 #    PARAMETERS:  host, portnumber
-#       RETURNS:  
+#        RETURNS:  
 #===============================================================================
 function ping_host() {
 
-        ## returncode doesn't work in subshell ...
-        PING=$(netcat -w 1 -z $1 $2 >> /dev/null 2>&1 ; echo $? )
+         ## returncode doesn't work in subshell ...
+         PING=$(netcat -w 1 -z $1 $2 >> /dev/null 2>&1 ; echo $? )
 
-        if [ "$PING" -eq 0 ]; then
-        	STATUS="[ONLINE]"  
-			STATUSCOLOR="\033[1;32m"
-		else
-			STATUS="[OFFLINE]" 
-			STATUSCOLOR="\033[1;31m"
-		fi
+         if [ "$PING" -eq 0 ]; then
+             STATUS="[UP]"  
+            STATUSCOLOR="\033[1;32m"
+        else
+            STATUS="[DOWN]" 
+            STATUSCOLOR="\033[1;31m"
+        fi
 }
 
 
 #===  FUNCTION  ================================================================
-#          NAME:  check_input
+#           NAME:  check_input
 #   DESCRIPTION:  check if given input is correct and digit is in list range
-#    PARAMETERS:  input, INPUT2 (optional)
-#       RETURNS:  true/false
+#    PARAMETERS:  PROJECT, HOST (optional)
+#        RETURNS:  true/false
 #===============================================================================
 function check_input() {
 
-	## no project choose
-        [ "$INPUT" == "" ] && return 1
+         ## if host is given project must known!
+         [ -z $2 ] && SEARCHSTRING=$1 || SEARCHSTRING=$2
 
-        ## User cancel
-        [ "$1" == "x" ] && ( echo "Du weißt auch nicht was du willst ..." ; kill $MAINPID )
+         case "${SEARCHSTRING}" in
 
-        ## project menu
-        if  [ "$2" == "INPUT2" ]; then
-                ## back to mainmenu
-                if [ "$1" == "z" ]; then 
-                        bash $0
-                elif [ `echo $1 | grep -E ^[[:digit:]]+$` ]; then
-                        return 0
-                else
-                        ## happen when projectname is directly given
-                        [[ `grep "$project:$1" $locationOfScript/projects.txt` ]] && return 0 || return 1
-                fi
-        elif [ `echo "$1" | grep -E ^[[:digit:]]+$` ] && [ "$1" -le "$project_count"  ]; then
-                return 0
-		## check for project-names
-	elif [ `cat $locationOfScript/projects.txt | cut -d ":" -f1 | egrep -v "^$|#" | sort -u | grep "$1"` ]; then
-		return 0
-        else 
-                return 1
-        fi
+            dummy)
+                  return 1
+                  ;;
+
+            [[:digit:]]*)
+                  ## projectnumber is given
+                  ## 0-9
+                  if [ -z "$2" ]; then
+                      [[ "${!array_projects[@]}" =~ "${1}" ]] && return 0 || return 1
+                  else
+                      ## array_hosts => dynamic array "{projectname}"
+                      declare -n array_hosts="${array_projects[${1}]}"
+
+                      ## check if given digit is an host (index number of array)
+                      [[ "${!array_hosts[@]}" =~ "${1}" ]] && return 0 || return 1
+                  fi
+                  ;;
+             z)
+                  ## back to mainmenu
+                  bash $0
+                  ;;
+             x)
+                  ## exit
+                  echo "Du weißt auch nicht was du willst ..."
+                  kill $MAINPID
+                  ;;
+             [[:alpha:]])
+                  ## group filter
+                  return 1
+                  ;;
+
+             [[:alpha:]]*)
+                  ## check for project-names
+                  ## a-z or A-Z
+                  if [ -z "$2" ]; then
+                      [[ "${array_projects[@]}" =~ "${1}" ]] && return 0 || return 1
+                  else
+                      ## array_hosts => dynamic array "{projectname}"
+                      declare -n array_hosts="${array_projects[${1}]}"
+
+                      ## check if given project name is in dynamic project array
+                      [[ "${array_hosts[@]}" =~ "${1}" ]] && return 0 || return 1
+                  fi
+                  ;;
+             *)
+                  return 1
+                  ;;
+         esac
+         
+             
+
 
 }
 
 
 #===  FUNCTION  ================================================================
-#          NAME:  ssh_to_host
+#           NAME:  ssh_to_host
 #   DESCRIPTION:  connect to host
-#    PARAMETERS:  hostname (INPUT2)
-#       RETURNS:  true/false
+#    PARAMETERS:  project, host
+#        RETURNS:  true/false
 #===============================================================================
 function ssh_to_host() {
 
-        ## check if number or hostname given
-        if [ `echo $1 | grep -E ^[[:digit:]]+$` ]; then
-                ## linenumber
-                HOSTSTRING=$(grep "^$project" $locationOfScript/projects.txt | head -n $1 | tail -n 1 )
-        else
-                ## hostnme
-                HOSTSTRING==$(grep "^$project:$1" $locationOfScript/projects.txt  )
-        fi
+         PROJECT=$1
+         HOST=$2
 
-        SSHHOST=`echo $HOSTSTRING |cut -f 2 -d ':' `
-        USERNAME=`echo $HOSTSTRING |cut -f 4 -d ':' `
-        SSHPORT=`echo $HOSTSTRING |cut -f 6 -d ':' `
+         ## check if number or hostname given
+         if [ `echo ${HOST} | grep -E ^[[:digit:]]+$` ]; then
+                  ## linenumber
+                  declare -n ARR_PROJECT="${PROJECT}"
+                  SSHHOST=${ARR_PROJECT[${HOST}]}
+         else
+                  ## hostname
+                  SSHHOST=${HOST}
+         fi
 
-        [[ -z $USERNAME ]]              || USERNAME="$USERNAME@"
-        [[ -z $SSHPORT ]]               && SSHPORT="22"
 
-        echo "Executing: ssh -p $SSHPORT $USERNAME$SSHHOST"
-        ssh -p $SSHPORT $USERNAME$SSHHOST 
+          declare -n ARRAY_SSHHOST="${SSHHOST}"
+          USERNAME=${ARRAY_SSHHOST["user"]}
+          SSHPORT=${ARRAY_SSHHOST["port"]}
+          SSHFQDN=${ARRAY_SSHHOST["fqdn"]}
+
+          ## if fqdn is defined we allways connect to this
+#          [ -n ${ARRAY_SSHHOST['fqdn']} ] && SSHHOST="${ARRAY_SSHHOST['fqdn']}"
+#         TMP_FQDN="${ARRAY_SSHHOST['fqdn']}"
+#         [ -n ${SSHFQDN} ] && SSHHOST="${SSHFQDN}"
+
+#         if ( ${ARRAY_SSHHOST['fqdn']} && [ -n ${ARRAY_SSHHOST['fqdn']} ] ); then SSHHOST="${ARRAY_SSHHOST['fqdn']}"; fi
+
+         ## add ssh-parameter if optional params defined
+         [[ -n ${USERNAME} ]] && USERNAME="-l ${USERNAME}"
+         [[ -n ${SSHPORT} ]]  && SSHPORT="-p ${SSHPORT}"
+         [[ -n ${SSHFQDN} ]] && SSHHOST="${SSHFQDN}"
+
+         echo "Executing: ssh $SSHPORT $USERNAME $SSHHOST"
+         ssh $SSHPORT $USERNAME $SSHHOST 
 }
 
+
+#===  FUNCTION  ================================================================
+#           NAME:  debug
+#   DESCRIPTION:  print the arrays
+#    PARAMETERS:  
+#        RETURNS:  
+#===============================================================================
+function debug() {
+
+         echo -e '\n### DEBUG START ##########################\n'
+    
+             echo "Debug: array_projects"
+             for project in "${array_projects[@]}"; do
+
+                  echo -e "\nproject: $project"
+
+                  declare -n hosts="${project}"
+
+                  for host in "${hosts[@]}"; do
+
+                      declare -n vars="${host}"
+                      printf "  - %s\n" "server: ${host}"
+
+                      for i in "${!vars[@]}"; do
+                           printf "     - %s: %s\n" "$i" "${vars[$i]}"
+                      done
+                  done
+
+             done
+
+
+         echo -e '\n### DEBUG END ############################\n'
+}
 
 #===  Main Script  =============================================================
 #
 #
 #===============================================================================
-while ! check_input $INPUT ; do
-        if [ -z $1 ]; then
-        clear
-        echo " == Super SSH Sprungmenu =="
-        echo
-        cat $locationOfScript/projects.txt | grep -ve "^#" -e "^$" | cut -d ":" -f "1" | awk '!a[$0]++' | cat -n
-        echo
-        echo "     x  Abbruch"
-        echo
-        echo " ===================="
-        echo -ne "Auswahl: "
-           read INPUT
-        else
-           INPUT="$1"
-        fi
+INPUT_PROJECT=$1
+[ -n "$2" ] && INPUT_HOST="$2" || INPUT_HOST="dummy"
 
-        get_projects
-done
+get_projects
+
+if ${DEBUG}; then debug; fi
+
+print_mainmenu
+
+get_projectname ${INPUT_PROJECT}
 
 ## check if group OR host given
-while ! check_input $INPUT2 INPUT2 ; do
-        ## nothing was given
-        if [ -z $INPUT2 ]; then
-                print_projectmenu $INPUT
-                read INPUT2
-        ## group was given
-        elif ( [[ `echo $2 | grep -E ^[[:lower:]]$` ]] || [ `echo $INPUT2 | grep -E ^[[:lower:]]$` ] ); then
-                print_projectmenu $INPUT $INPUT2
-                read INPUT2
-        ## hostnumber or hostname was given
-        else 
-                INPUT2="$2"
-        fi
+
+while ! check_input "${INPUT_PROJECT}" "${INPUT_HOST}" ; do
+    print_projectmenu "${INPUT_PROJECT}" "${INPUT_HOST}"
+    read INPUT_HOST
+    INPUT_HOST="${INPUT_HOST:-dummy}"
 done
 
-ssh_to_host $INPUT2
+
+ssh_to_host ${project} ${INPUT_HOST} 
+
