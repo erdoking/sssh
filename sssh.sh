@@ -140,8 +140,12 @@ function get_groups() {
          done
 
          ## print groups
-         for i in "${!array_groups[@]}"; do
+         ## loop allowed characters
+         for i in "${arr_character[@]}"; do
+            ## if character is key of array_groups
+            if [[ "${!array_groups[@]}" =~ "${i}" ]]; then
                 printf   "[\033[1;33m%s\033[0m]\033[1;32m%s\033[0m " "${i}" "${array_groups[$i]}" 
+            fi
          done
 
 }
