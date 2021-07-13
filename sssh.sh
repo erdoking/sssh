@@ -67,7 +67,7 @@ function get_projects() {
 
     while read file
     do
-        projectname=`basename "${file}" .lst`
+         projectname=`basename "${file}" .lst`
 
          ## write projectname to project array
          array_projects+=("${projectname}")
@@ -93,23 +93,23 @@ function get_projects() {
                   [[ ${HOSTNAME::1} == [0-9] ]] && { HOSTNAME_PRINT=${HOSTNAME}; HOSTNAME=x${HOSTNAME}; }  || HOSTNAME_PRINT=`echo ${HOSTNAME} | cut -d'.' -f1` ; 
 
                   ## cleanup varname for array
-                  HOSTNAME="`echo ${HOSTNAME} | sed 's/\./_/g'| sed 's/-/_/g'`"
+                  ARRAY_HOSTNAME="`echo ${HOSTNAME} | sed 's/\./_/g'| sed 's/-/_/g'`"
 
                   ## Array by hostname
-                  declare -Ag "${HOSTNAME}"
+                  declare -Ag "${ARRAY_HOSTNAME}"
 
                   ## write default variables to host array
-                  eval "${HOSTNAME}+=(['fqdn']=\"${HOSTNAME_VAR}\")"
-                  eval "${HOSTNAME}+=(['name']=\"${HOSTNAME_PRINT}\")"
+                  eval "${ARRAY_HOSTNAME}+=(['fqdn']=\"${HOSTNAME_VAR}\")"
+                  eval "${ARRAY_HOSTNAME}+=(['name']=\"${HOSTNAME_PRINT}\")"
 
 
-                  eval "${projectname}+=(\"${HOSTNAME}\")"
+                  eval "${projectname}+=(\"${ARRAY_HOSTNAME}\")"
                   continue
              else
                   ## add configuration to host-array
                   ## varnames getting lower case (https://stackoverflow.com/questions/2264428/how-to-convert-a-string-to-lower-case-in-bash/2265268#2265268)
                   ## eval "nas+=([port]="22")"
-                  eval "${HOSTNAME}+=([\"${VARNAME,,}\"]=\"${VALUE}\")"
+                  eval "${ARRAY_HOSTNAME}+=([\"${VARNAME,,}\"]=\"${VALUE}\")"
              fi
                                  
 
