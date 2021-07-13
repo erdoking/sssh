@@ -67,12 +67,15 @@ function get_projects() {
 
     while read file
     do
-         projectname=`basename "${file}" .lst`
+         PROJECTNAME=`basename "${file}" .lst`
+
+         ## Allow projectfiles with [0-9][0-9]_projectname oder [0-9][0-9]projectname for sorting
+         [[ ${PROJECTNAME} =~ ^[0-9]* ]] && PROJECTNAME=`echo ${PROJECTNAME} | sed -E 's/^[0-9]*(_|)//'`
 
          ## write projectname to project array
-         array_projects+=("${projectname}")
-         declare -ga ${projectname}
-         eval "${projectname}+=('defaults')"        
+         array_projects+=("${PROJECTNAME}")
+         declare -ga ${PROJECTNAME}
+         eval "${PROJECTNAME}+=('defaults')"        
 
          ## parse project file
          while read VARNAME VALUE
@@ -103,7 +106,7 @@ function get_projects() {
                   eval "${ARRAY_HOSTNAME}+=(['name']=\"${HOSTNAME_PRINT}\")"
 
 
-                  eval "${projectname}+=(\"${ARRAY_HOSTNAME}\")"
+                  eval "${PROJECTNAME}+=(\"${ARRAY_HOSTNAME}\")"
                   continue
              else
                   ## add configuration to host-array
