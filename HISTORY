@@ -1,9 +1,14 @@
-v2.0.1 # 13.07.2021
+v2.0.2 # 07/2021
+ - create HISTORY file
+ - removed history from sssh.sh
+ - add ascii header
+
+v2.0.1 # 07/2021
  - Fix for ip address as hostname, more robust for special hostname
  - projectfiles now can be sort by beginning numbers (01_PROJECT.lst, 02_PROJECT2.lst) or (01PROJECT.lst, 02PROJECT2.lst)
  - some cleanup
 
-v2.0.0 # 29.06.2021
+v2.0.0 # 06/2021
  - start new version, complete rewrite of code
  - first commit after 3 years ;)
 ---
