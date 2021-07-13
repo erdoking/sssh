@@ -428,12 +428,12 @@ function ssh_to_host() {
 #         if ( ${ARRAY_SSHHOST['fqdn']} && [ -n ${ARRAY_SSHHOST['fqdn']} ] ); then SSHHOST="${ARRAY_SSHHOST['fqdn']}"; fi
 
          ## add ssh-parameter if optional params defined
-         [[ -n ${USERNAME} ]] && USERNAME="-l ${USERNAME}"
-         [[ -n ${SSHPORT} ]]  && SSHPORT="-p ${SSHPORT}"
+         [[ -n ${USERNAME} ]] && USERNAME="-l ${USERNAME} "
+         [[ -n ${SSHPORT} ]]  && SSHPORT="-p ${SSHPORT} "
          [[ -n ${SSHFQDN} ]] && SSHHOST="${SSHFQDN}"
 
-         echo "Executing: ssh $SSHPORT $USERNAME $SSHHOST"
-         ssh $SSHPORT $USERNAME $SSHHOST 
+         echo "Executing: ssh ${SSHPORT}${USERNAME}${SSHHOST}"
+         ssh ${SSHPORT} ${USERNAME} ${SSHHOST}
 }
 
 
