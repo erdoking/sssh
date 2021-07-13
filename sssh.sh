@@ -1,28 +1,24 @@
 #!/usr/bin/env bash
 
-# ##########################################################
-# 
-#        Super SSH Script 
+# ########################################################################
 #
-#        Version  2 [06/2021]
+# ______________________________________
+# __________________________/\_\________
+# __________________________\_\_\_______
+# _____/',__\__/',__\__/',__\\_\____`\__
+# ____/\__,_`\/\__,_`\/\__,_`\\_\_\_\_\_
+# ____\/\____/\/\____/\/\____/_\_\_\_\_\
+# _____\/___/__\/___/__\/___/___\/_/\/_/
+# ______________________________________
 #
-#        v2    start new version, complete rewrite of code
-#        ---
-#        V1.9.3   Fix for ip address as hostname, more robust for special hostname
-#        V1.9.2   Rewrite project menu output, change from echo to printf
-#        V1.9.1   Project overview now accept project names as input [08.11.2017]
-#        V1.9     [06.10.2017]
-#        V1.8     Added group function again [08.2017]
-#        V1.7     Rewrite script - now with functions [06.2016]
-#        V1.6     Added function to pass parameters to server menu [05.2012]
-#        V1.5     Added function to choose by hostname [05.2012]
-#        V1.4     Added group function [11.2011]
-#        V1.3     Added avaibility function
-#        V1.2     color output
-#        V1.0     Create script
+#     Super SSH Script 
+#
+#     Version 2.0.1 [07/2021]
+#
+# ########################################################################
 
 
-## some infos 
+## some infos for developer 
 ##
 ## There are 3 types of arrays:
 ##
@@ -33,7 +29,7 @@
 
 
 #### config  ####
-## Wenn true wird jeder Host 1x angepingt und der Status ausgegeben
+## if true every host get "ping" one time
 PINGHOST="true" # gueltige Werte [true,false]
 DEBUG="false"
 

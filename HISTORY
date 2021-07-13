@@ -1,0 +1,22 @@
+v2.0.1 # 13.07.2021
+ - Fix for ip address as hostname, more robust for special hostname
+ - projectfiles now can be sort by beginning numbers (01_PROJECT.lst, 02_PROJECT2.lst) or (01PROJECT.lst, 02PROJECT2.lst)
+ - some cleanup
+
+v2.0.0 # 29.06.2021
+ - start new version, complete rewrite of code
+ - first commit after 3 years ;)
+---
+V1.9.3   Fix for ip address as hostname, more robust for special hostname
+V1.9.2   Rewrite project menu output, change from echo to printf
+V1.9.1   Project overview now accept project names as input [08.11.2017]
+V1.9     [06.10.2017]
+V1.8     Added group function again [08.2017]
+V1.7     Rewrite script - now with functions [06.2016]
+V1.6     Added function to pass parameters to server menu [05.2012]
+V1.5     Added function to choose by hostname [05.2012]
+V1.4     Added group function [11.2011]
+V1.3     Added avaibility function
+V1.2     color output
+V1.0     Create script
+
