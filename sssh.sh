@@ -8,6 +8,7 @@
 #
 #        v2    start new version, complete rewrite of code
 #        ---
+#        V1.9.3   Fix for ip address as hostname, more robust for special hostname
 #        V1.9.2   Rewrite project menu output, change from echo to printf
 #        V1.9.1   Project overview now accept project names as input [08.11.2017]
 #        V1.9     [06.10.2017]
@@ -78,15 +79,28 @@ function get_projects() {
          do
              if [ "${VARNAME}" == "HOST" ]
              then
-                  unset VAR_HOSTNAME
+                  ## reset vars
+                  unset HOSTNAME_VAR
 
-                  HOSTNAME=`echo ${VALUE} | sed 's/-/_/g'`
+                  ## define readable varname
+                  HOSTNAME="${VALUE}"
 
-                  [[ ${HOSTNAME} =~ '.' ]] && { VAR_HOSTNAME=${HOSTNAME}; HOSTNAME=`echo ${HOSTNAME} | cut -d'.' -f1` ; }
+                  ## save orig hostname
+                  HOSTNAME_VAR="${HOSTNAME}"
 
+                  ## add x to ip addresses because declare doesn't like numbers
+                  ## 10.10.10.10 => x10_10_10_10
+                  [[ ${HOSTNAME::1} == [0-9] ]] && { HOSTNAME_PRINT=${HOSTNAME}; HOSTNAME=x${HOSTNAME}; }  || HOSTNAME_PRINT=`echo ${HOSTNAME} | cut -d'.' -f1` ; 
+
+                  ## cleanup varname for array
+                  HOSTNAME="`echo ${HOSTNAME} | sed 's/\./_/g'| sed 's/-/_/g'`"
+
+                  ## Array by hostname
                   declare -Ag "${HOSTNAME}"
 
-                  [[ ${VAR_HOSTNAME} ]] && { eval "${HOSTNAME}+=(['fqdn']=\"${VAR_HOSTNAME}\")"; }
+                  ## write default variables to host array
+                  eval "${HOSTNAME}+=(['fqdn']=\"${HOSTNAME_VAR}\")"
+                  eval "${HOSTNAME}+=(['name']=\"${HOSTNAME_PRINT}\")"
 
 
                   eval "${projectname}+=(\"${HOSTNAME}\")"
@@ -256,7 +270,7 @@ function print_projectmenu() {
 
                   LINENUMBER=$[LINENUMBER+1]
 
-                  SSHHOST=${host}
+                  SSHHOST="${vars['name']}"
                   DESCRIBTION="${vars['desc']}"
                   USERNAME="${vars['user']}"
                   GROUP="${vars['group']}"

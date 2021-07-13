@@ -1,0 +1,48 @@
+HOST wordpress-ichalsroot
+    DESC wordpress ichalsroot.de
+    GROUP PROD
+
+HOST guacamole 
+    DESC guacamole
+    GROUP PROD
+
+HOST ulogger
+    DESC ulogger Server
+    GROUP PROD
+
+HOST crowbar
+    DESC crowbar Proxy
+
+HOST aptcacherng
+    DESC Apt-Cacher-ng
+
+HOST 172.16.10.17
+    DESC PsychoStats
+
+HOST 172.16.10.18 
+    DESC Bitcoin
+
+HOST esniper
+    DESC esniper
+
+HOST roundcubemail
+    DESC roundcubemail
+
+HOST mailer
+    DESC New Mail Server
+
+HOST asterisk
+    DESC Asteris
+
+HOST esniper
+    DESC esniper
+
+HOST roundcubemail
+    DESC roundcubemail
+
+HOST mailer
+    DESC New Mail Server
+
+HOST asterisk
+    DESC Asteriskk
+
