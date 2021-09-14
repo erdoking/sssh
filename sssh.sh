@@ -118,7 +118,7 @@ function get_projects() {
 
         done <<<$( egrep -v "(^\s*$|^#)" "${file}" )
 
-    done <<<$( find ${locationOfScript} -iname *.lst | sort )
+    done <<<$( find ${locationOfScript} -iname "*.lst" | sort )
 
 }
 
