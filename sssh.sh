@@ -274,28 +274,23 @@ function print_projectmenu() {
 
            if ( [ -n "${GROUP_FILTER}" ] && [ "${GROUP}" != "${GROUP_FILTER}" ]); then continue; fi
 
-           [[ -z ${GROUP} ]]                 && SSHPORT="22"
-
            ## print full fqdn if defined and not deactivated by conf
            if ( ${FQDN} && [ ${vars['fqdn']} ] ); then SSHHOST=${vars['fqdn']}; fi
            ## FQDN allways used to ping host
            if ( [ ${vars['fqdn']} ] ); then SSHPINGHOST="${vars['fqdn']}"; fi
 
-
            ## check some variables
-           [[ -z ${USERNAME} ]]          && USERNAME="" || USERNAME="$USERNAME @"
+           [[ -z ${USERNAME} ]]          && USERNAME="" || USERNAME="${USERNAME} @"
            [[ -z ${SSHPORT} ]]           && SSHPORT="22"
-
-           [[ "${PINGHOST}" == "true" ]] && ping_host ${SSHPINGHOST} ${SSHPORT} || STATUS="\t"
-
-           [[ ! -z ${ALIAS} ]]           && SSHHOST="${ALIAS}"
            [[ "${SSHPORT}" != "22" ]]    && SSHPORT_PRINT=":${SSHPORT}"
+           [[ "${PINGHOST}" == "true" ]] && ping_host ${SSHPINGHOST} ${SSHPORT} || STATUS="\t"
+           [[ ! -z ${ALIAS} ]]           && SSHHOST="${ALIAS}"
 
            printf "%2s %12s %-25s ${STATUSCOLOR}%-12s\033[0m %-13s %s\n" "${LINENUMBER}" "${USERNAME}" "${SSHHOST}${SSHPORT_PRINT}" "${STATUS}" "${GROUP}" "${DESCRIBTION}"
         done
 
         # Ausgabe der Standarteintraege
-        echo -en "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
+        echo -e "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
 }
 
 
@@ -311,7 +306,7 @@ function ping_host() {
         PING=$(netcat -w 1 -z $1 $2 >> /dev/null 2>&1 ; echo $? )
 
         if [ "$PING" -eq 0 ]; then
-            STATUS="[UP]"  
+           STATUS="[UP]"  
            STATUSCOLOR="\033[1;32m"
         else
            STATUS="[DOWN]" 
@@ -446,7 +441,6 @@ function debug() {
             for project in "${array_projects[@]}"; do
 
                  echo -e "\nproject: $project"
-
                  declare -n hosts="${project}"
 
                  for host in "${hosts[@]}"; do
@@ -481,7 +475,6 @@ print_mainmenu
 get_projectname ${INPUT_PROJECT}
 
 ## check if group OR host given
-
 while ! check_input "${INPUT_PROJECT}" "${INPUT_HOST}" ; do
     print_projectmenu "${INPUT_PROJECT}" "${INPUT_HOST}"
     read INPUT_HOST
