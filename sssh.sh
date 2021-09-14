@@ -259,6 +259,8 @@ function print_projectmenu() {
         declare -n array_project="$project"
 
         for host in "${array_project[@]}"; do
+            
+           unset SSHPORT_PRINT
 
            [ "${host}" == "defaults" ] && continue
 
