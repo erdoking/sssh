@@ -119,10 +119,10 @@ function get_projects() {
 }
 
 #===  FUNCTION  ================================================================
-#           NAME:  get_groups
+#          NAME:  get_groups
 #   DESCRIPTION:  find all groups of given project
 #    PARAMETERS:  project_name
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function get_groups() {
 
@@ -167,10 +167,10 @@ function get_groups() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  get_projectname
+#          NAME:  get_projectname
 #   DESCRIPTION:  detect the project name
 #    PARAMETERS:  project nr or name
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function get_projectname() {
 
@@ -190,10 +190,10 @@ function get_projectname() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  print_mainmenu
+#          NAME:  print_mainmenu
 #   DESCRIPTION:  print out main menu of all projects
 #    PARAMETERS:  
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function print_mainmenu() {
 
@@ -219,10 +219,10 @@ function print_mainmenu() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  print_projectmenu
+#          NAME:  print_projectmenu
 #   DESCRIPTION:  print out projectmenu for given project
 #    PARAMETERS:  project,group
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function print_projectmenu() {
 
@@ -304,10 +304,10 @@ function print_projectmenu() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  ping_host
+#          NAME:  ping_host
 #   DESCRIPTION:  check if given ssh port is open
 #    PARAMETERS:  host, portnumber
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function ping_host() {
 
@@ -325,10 +325,10 @@ function ping_host() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  check_input
+#          NAME:  check_input
 #   DESCRIPTION:  check if given input is correct and digit is in list range
 #    PARAMETERS:  PROJECT, HOST (optional)
-#        RETURNS:  true/false
+#       RETURNS:  true/false
 #===============================================================================
 function check_input() {
 
@@ -393,10 +393,10 @@ function check_input() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  ssh_to_host
+#          NAME:  ssh_to_host
 #   DESCRIPTION:  connect to host
 #    PARAMETERS:  project, host
-#        RETURNS:  true/false
+#       RETURNS:  true/false
 #===============================================================================
 function ssh_to_host() {
 
@@ -437,10 +437,10 @@ function ssh_to_host() {
 
 
 #===  FUNCTION  ================================================================
-#           NAME:  debug
+#          NAME:  debug
 #   DESCRIPTION:  print the arrays
 #    PARAMETERS:  
-#        RETURNS:  
+#       RETURNS:  
 #===============================================================================
 function debug() {
 
