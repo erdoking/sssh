@@ -276,9 +276,9 @@ function print_projectmenu() {
            USERNAME="${vars['user']}"
            SSHPORT="${vars['port']}"
            ALIAS="${vars['alias']}"
-           GROUP="${vars['group']}"
+           GROUP="${vars['group']} "
 
-           if ( [ -n "${GROUP_FILTER}" ] && [[ ! "${GROUP}" =~ "${GROUP_FILTER}" ]]); then continue; fi
+           if ( [ -n "${GROUP_FILTER}" ] && [[ ! "${GROUP}" =~ "${GROUP_FILTER} " ]]); then continue; fi
 
            ## print just first group
            [ ${FIRST_GROUP_ONLY} ] && GROUP_PRINT=`echo "${GROUP}" | cut -d' ' -f1` || GROUP_PRINT=${GROUP}
