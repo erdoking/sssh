@@ -1,3 +1,7 @@
+v2.0.3 # 09/2021
+ - Add posibility to define multible groups
+ - just first group are display by default
+
 v2.0.2 # 07/2021
  - create HISTORY file
  - removed history from sssh.sh

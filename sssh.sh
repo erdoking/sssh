@@ -13,7 +13,7 @@
 #
 #     Super SSH Script 
 #
-#     Version 2.0.2 [07/2021]
+#     Version 2.0.3 [09/2021]
 #
 # ########################################################################
 
@@ -36,6 +36,10 @@ DEBUG="false"
 ## print full fqdn in project menu [default: false]
 ## fqdn is always used to connect even is deactivated!!
 FQDN="false"
+
+## print just first group in project menu [default: true]
+FIRST_GROUP_ONLY="true"
+
 
 #### do not change ####
 ## used to kill from subshell
@@ -145,12 +149,14 @@ function get_groups() {
 
                  if [ -n "${vars['group']}" ];
                  then
-                     if [[ ! " ${array_groups[@]} " =~ " ${vars['group']} " ]]
-                     then
-                          eval array_groups+=([\"${arr_character[${groups_count}]}\"]=\"${vars['group']}\")
+                     for group_name in ${vars['group']}; do
 
-                          groups_count=$[groups_count+1]
-                     fi
+                         if [[ ! " ${array_groups[@]} " =~ " ${group_name} " ]]
+                         then
+                              eval array_groups+=([\"${arr_character[${groups_count}]}\"]=\"${group_name}\")
+                              groups_count=$[groups_count+1]
+                         fi
+                     done
                  fi
         done
 
@@ -241,26 +247,24 @@ function print_projectmenu() {
 
                  for i in "${!arr_character[@]}"; do
                           if [ "${arr_character[$i]}" == "$2" ]; then
-                                   #GROUP_FILTER=$( echo $groups | cut -d ":" -f $(($i+1)) )
                                    GROUP_FILTER=${array_groups["$2"]}
                           fi
                  done
         fi
 
 
-
-        # Ausgabe des Headers
+        # Print header
         if [ "$PINGHOST" == "true" ]; then
                printf "\n\n\033[1;33m%3s %11s %-25s %-12s %-13s %s\033[0m\n" "ID" "<USER> @" "Host:<port>" "[Status]" "Gruppe" "Beschreibung"
         else
-                 echo -e "\033[1;33mID USER\t Host\tGruppe\t\t\tBeschreibung \033[0m "
+               echo -e "\033[1;33mID USER\t Host\tGruppe\t\t\tBeschreibung \033[0m "
         fi
 
         declare -n array_project="$project"
 
         for host in "${array_project[@]}"; do
             
-           unset SSHPORT_PRINT
+           unset SSHPORT_PRINT GROUP_PRINT
 
            [ "${host}" == "defaults" ] && continue
 
@@ -270,11 +274,14 @@ function print_projectmenu() {
            SSHHOST="${vars['name']}"
            DESCRIBTION="${vars['desc']}"
            USERNAME="${vars['user']}"
-           GROUP="${vars['group']}"
            SSHPORT="${vars['port']}"
            ALIAS="${vars['alias']}"
+           GROUP="${vars['group']}"
 
-           if ( [ -n "${GROUP_FILTER}" ] && [ "${GROUP}" != "${GROUP_FILTER}" ]); then continue; fi
+           if ( [ -n "${GROUP_FILTER}" ] && [[ ! "${GROUP}" =~ "${GROUP_FILTER}" ]]); then continue; fi
+
+           ## print just first group
+           [ ${FIRST_GROUP_ONLY} ] && GROUP_PRINT=`echo "${GROUP}" | cut -d' ' -f1` || GROUP_PRINT=${GROUP}
 
            ## print full fqdn if defined and not deactivated by conf
            if ( ${FQDN} && [ ${vars['fqdn']} ] ); then SSHHOST=${vars['fqdn']}; fi
@@ -288,11 +295,11 @@ function print_projectmenu() {
            [[ "${PINGHOST}" == "true" ]] && ping_host ${SSHPINGHOST} ${SSHPORT} || STATUS="\t"
            [[ ! -z ${ALIAS} ]]           && SSHHOST="${ALIAS}"
 
-           printf "%2s %12s %-25s ${STATUSCOLOR}%-12s\033[0m %-13s %s\n" "${LINENUMBER}" "${USERNAME}" "${SSHHOST}${SSHPORT_PRINT}" "${STATUS}" "${GROUP}" "${DESCRIBTION}"
+           printf "%2s %12s %-25s ${STATUSCOLOR}%-12s\033[0m %-13s %s\n" "${LINENUMBER}" "${USERNAME}" "${SSHHOST}${SSHPORT_PRINT}" "${STATUS}" "${GROUP_PRINT}" "${DESCRIBTION}"
         done
 
         # Ausgabe der Standarteintraege
-        echo -e "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
+        echo -en "\n\n     x  Abbruch\n     z  Zurueck ins Basemenu\n ============================\nAuswahl: "
 }
 
 
