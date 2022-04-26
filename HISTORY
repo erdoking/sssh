@@ -1,3 +1,6 @@
+v2.0.4 # 04/2022
+ - add ~/sssh to searchpath for *.lst  
+
 v2.0.3 # 09/2021
  - Add posibility to define multible groups
  - just first group are display by default

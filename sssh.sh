@@ -13,7 +13,7 @@
 #
 #     Super SSH Script 
 #
-#     Version 2.0.3 [09/2021]
+#     Version 2.0.4 [04/2022]
 #
 # ########################################################################
 
@@ -118,7 +118,7 @@ function get_projects() {
 
         done <<<$( egrep -v "(^\s*$|^#)" "${file}" )
 
-    done <<<$( find ${locationOfScript} -iname "*.lst" | sort )
+    done <<<$( find ${locationOfScript} ~/sssh -iname "*.lst" | sort )
 
 }
 
